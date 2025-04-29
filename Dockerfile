@@ -29,6 +29,9 @@ RUN python -m venv /.venv \
 # Define a second stage for the runtime, using the same Debian Bookworm slim image
 FROM python:3.14.0a7-slim-bookworm as final
 
+#Upgrade for perl vulnerability
+RUN apt-get update && apt-get upgrade -y
+
 # Upgrade libc-bin in the final stage to ensure security patch is applied
 RUN apt-get update && apt-get install -y libc-bin \
     && apt-get clean \
