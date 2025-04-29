@@ -27,7 +27,7 @@ RUN python -m venv /.venv \
     && pip install -r requirements.txt
 
 # Define a second stage for the runtime, using the same Debian Bookworm slim image
-FROM python:3.12-slim-bookworm as final
+FROM python:3.13-slim-bookworm as final
 
 # Upgrade libc-bin in the final stage to ensure security patch is applied
 RUN apt-get update && apt-get install -y libc-bin \
