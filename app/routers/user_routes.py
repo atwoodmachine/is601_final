@@ -19,6 +19,7 @@ Key Highlights:
 """
 
 from builtins import dict, int, len, str
+from typing import Optional
 from datetime import timedelta
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Request
@@ -28,6 +29,7 @@ from app.dependencies import get_current_user, get_db, get_email_service, requir
 from app.schemas.pagination_schema import EnhancedPagination
 from app.schemas.token_schema import TokenResponse
 from app.schemas.user_schemas import LoginRequest, UserBase, UserCreate, UserListResponse, UserResponse, UserUpdate
+from app.models.user_model import UserRole
 from app.services.user_service import UserService
 from app.services.jwt_service import create_access_token
 from app.utils.link_generation import create_user_links, generate_pagination_links
@@ -69,6 +71,34 @@ async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(g
         created_at=user.created_at,
         updated_at=user.updated_at,
         links=create_user_links(user.id, request)  
+    )
+
+#New endpoint for getting users based on search criteria: email, username, role
+@router.get("/users/", response_model=UserListResponse, name="search_users", tags=["User Management Requires (Admin or Manager Roles)"])
+async def search_users(
+    request: Request,
+    nickname: Optional[str] = None, 
+    email: Optional[str] = None, 
+    role: Optional[UserRole] = None,
+    skip: int = 0,
+    limit: int = 10,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))
+):
+    filtered_users = await UserService.get_by_search(db, nickname, email, role, skip, limit)
+    users_count = await UserService.count_by_search(db, nickname, email, role)
+    user_responses = [
+        UserResponse.model_validate(user) for user in filtered_users
+    ]
+
+    pagination_links = generate_pagination_links(request, skip, limit, users_count)
+    
+    return UserListResponse(
+        items=user_responses,
+        total=users_count,
+        page=skip // limit + 1,
+        size=len(user_responses),
+        links=pagination_links
     )
 
 # Additional endpoints for update, delete, create, and list users follow a similar pattern, using
