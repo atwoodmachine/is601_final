@@ -49,6 +49,45 @@ class UserService:
     async def get_by_email(cls, session: AsyncSession, email: str) -> Optional[User]:
         return await cls._fetch_user(session, email=email)
 
+    #helper for search methods since a count is needed for pagination, to keep things dry
+    @classmethod
+    def search_filter(cls, nickname: Optional[str], email: Optional[str], role: Optional[UserRole]) -> Dict:
+        query_filters = {}
+        if nickname:
+            query_filters["nickname"] = nickname
+        if email:
+            query_filters["email"] = email
+        if role:
+            query_filters["role"] = role
+        return query_filters
+
+    @classmethod
+    async def get_by_search(cls, 
+    session: AsyncSession, 
+    nickname: Optional[str], 
+    email: Optional[str], 
+    role: Optional[UserRole], 
+    skip: int = 0, 
+    limit: int = 10) -> List[User]:
+        query_filters = cls.search_filter(nickname, email, role)
+
+        query = select(User).filter_by(**query_filters).offset(skip).limit(limit)
+        result = await cls._execute_query(session, query)
+        return result.scalars().all() if result else []
+
+    @classmethod
+    async def count_by_search(cls, 
+    session: AsyncSession, 
+    nickname: Optional[str], 
+    email: Optional[str], 
+    role: Optional[UserRole]) -> int:
+        query_filters = cls.search_filter(nickname, email, role)
+
+        query = select(func.count()).select_from(User).filter_by(**query_filters)
+        result = await session.execute(query)
+        count = result.scalar()
+        return count
+
     @classmethod
     async def create(cls, session: AsyncSession, user_data: Dict[str, str], email_service: EmailService) -> Optional[User]:
         try:
