@@ -51,39 +51,57 @@ class UserService:
 
     #helper for search methods since a count is needed for pagination, to keep things dry
     @classmethod
-    def search_filter(cls, nickname: Optional[str], email: Optional[str], role: Optional[UserRole]) -> Dict:
-        query_filters = {}
+    def search_filter(cls, 
+    nickname: Optional[str] = None, 
+    email: Optional[str] = None, 
+    role: Optional[UserRole] = None,
+    is_professional: Optional[bool] = None,
+    created_before: Optional[datetime] = None,
+    created_after: Optional[datetime] = None) -> List:
+        query_filters = []
         if nickname:
-            query_filters["nickname"] = nickname
+            query_filters.append(User.nickname == nickname)
         if email:
-            query_filters["email"] = email
+            query_filters.append(User.email == email)
         if role:
-            query_filters["role"] = role
+            query_filters.append(User.role == role)
+        if is_professional is not None:
+            query_filters.append(User.is_professional == is_professional)
+        if created_before:
+            query_filters.append(User.created_at <= created_before)
+        if created_after:
+            query_filters.append(User.created_at >= created_after)
         return query_filters
 
     @classmethod
     async def get_by_search(cls, 
     session: AsyncSession, 
-    nickname: Optional[str], 
-    email: Optional[str], 
-    role: Optional[UserRole], 
+    nickname: Optional[str] = None, 
+    email: Optional[str] = None, 
+    role: Optional[UserRole] = None,
+    is_professional: Optional[bool] = None,
+    created_before: Optional[datetime] = None,
+    created_after: Optional[datetime] = None, 
     skip: int = 0, 
     limit: int = 10) -> List[User]:
-        query_filters = cls.search_filter(nickname, email, role)
+        query_filters = cls.search_filter(nickname, email, role, is_professional, created_before, created_after)
 
-        query = select(User).filter_by(**query_filters).offset(skip).limit(limit)
+        query = select(User).filter(*query_filters).offset(skip).limit(limit)
         result = await cls._execute_query(session, query)
         return result.scalars().all() if result else []
 
     @classmethod
     async def count_by_search(cls, 
     session: AsyncSession, 
-    nickname: Optional[str], 
-    email: Optional[str], 
-    role: Optional[UserRole]) -> int:
-        query_filters = cls.search_filter(nickname, email, role)
+    nickname: Optional[str] = None, 
+    email: Optional[str] = None, 
+    role: Optional[UserRole] = None,
+    is_professional: Optional[bool] = None,
+    created_before: Optional[datetime] = None,
+    created_after: Optional[datetime] = None) -> int:
+        query_filters = cls.search_filter(nickname, email, role, is_professional, created_before, created_after)
 
-        query = select(func.count()).select_from(User).filter_by(**query_filters)
+        query = select(func.count()).select_from(User).filter(*query_filters)
         result = await session.execute(query)
         count = result.scalar()
         return count
