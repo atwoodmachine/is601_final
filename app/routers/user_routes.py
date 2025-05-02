@@ -20,7 +20,7 @@ Key Highlights:
 
 from builtins import dict, int, len, str
 from typing import Optional
-from datetime import timedelta
+from datetime import timedelta, datetime
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -80,13 +80,16 @@ async def search_users(
     nickname: Optional[str] = None, 
     email: Optional[str] = None, 
     role: Optional[UserRole] = None,
+    is_professional: Optional[bool] = None,
+    created_before: Optional[datetime] = None,
+    created_after: Optional[datetime] = None,
     skip: int = 0,
     limit: int = 10,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))
 ):
-    filtered_users = await UserService.get_by_search(db, nickname, email, role, skip, limit)
-    users_count = await UserService.count_by_search(db, nickname, email, role)
+    filtered_users = await UserService.get_by_search(db, nickname, email, role, is_professional, created_before, created_after, skip, limit)
+    users_count = await UserService.count_by_search(db, nickname, email, role, is_professional, created_before, created_after)
     user_responses = [
         UserResponse.model_validate(user) for user in filtered_users
     ]
