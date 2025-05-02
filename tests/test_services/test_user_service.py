@@ -161,3 +161,52 @@ async def test_unlock_user_account(db_session, locked_user):
     assert unlocked, "The account should be unlocked"
     refreshed_user = await UserService.get_by_id(db_session, locked_user.id)
     assert not refreshed_user.is_locked, "The user should no longer be locked"
+    
+#Testing for search/fileter related features and cases
+async def test_get_by_search_nickname(db_session, user):
+    retrieved_users = await UserService.get_by_search(db_session, nickname=user.nickname)
+    assert len(retrieved_users) == 1
+    assert retrieved_users[0].nickname == user.nickname
+
+async def test_get_by_search_email(db_session, user):
+    retrieved_users = await UserService.get_by_search(db_session, email=user.email)
+    assert len(retrieved_users) == 1
+    assert retrieved_users[0].email == user.email
+
+async def test_get_by_search_role(db_session, users_with_same_role_50_users):
+    users_page_1 = await UserService.get_by_search(db_session, role=UserRole.AUTHENTICATED, skip=0, limit=10)
+    users_page_2 = await UserService.get_by_search(db_session, role=UserRole.AUTHENTICATED, skip=10, limit=10)
+    assert len(users_page_1) == 10
+    assert len(users_page_2) == 10
+    assert users_page_1[0].id != users_page_2[0].id
+    assert users_page_1[0].role == UserRole.AUTHENTICATED
+
+async def test_get_by_search_not_exists(db_session):
+    retrieved_users = await UserService.get_by_search(db_session, nickname="nick", email="nothere@nowhere.com", role=UserRole.AUTHENTICATED)
+    assert len(retrieved_users) == 0
+
+#search combinations
+async def test_get_by_search_all(db_session, user):
+    retrieved_users = await UserService.get_by_search(db_session, nickname=user.nickname, email=user.email, role=UserRole.AUTHENTICATED)
+    assert len(retrieved_users) == 1
+    assert retrieved_users[0].nickname == user.nickname
+    assert retrieved_users[0].email == user.email
+    assert retrieved_users[0].role == UserRole.AUTHENTICATED
+
+async def test_get_by_search_email_nickname(db_session, user):
+    retrieved_users = await UserService.get_by_search(db_session, nickname=user.nickname, email=user.email)
+    assert len(retrieved_users) == 1
+    assert retrieved_users[0].nickname == user.nickname
+    assert retrieved_users[0].email == user.email
+
+async def test_get_by_search_email_role(db_session, user):
+    retrieved_users = await UserService.get_by_search(db_session, email=user.email, role=UserRole.AUTHENTICATED)
+    assert len(retrieved_users) == 1
+    assert retrieved_users[0].email == user.email
+    assert retrieved_users[0].role == UserRole.AUTHENTICATED
+
+async def test_get_by_search_nickname_role(db_session, user):
+    retrieved_users = await UserService.get_by_search(db_session, nickname=user.nickname, role=UserRole.AUTHENTICATED)
+    assert len(retrieved_users) == 1
+    assert retrieved_users[0].nickname == user.nickname
+    assert retrieved_users[0].role == UserRole.AUTHENTICATED
