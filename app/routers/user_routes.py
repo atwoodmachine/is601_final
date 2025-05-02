@@ -74,7 +74,7 @@ async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(g
     )
 
 #New endpoint for getting users based on search criteria: email, username, role
-@router.get("/users/", response_model=UserListResponse, name="search_users", tags=["User Management Requires (Admin or Manager Roles)"])
+@router.get("/users/search/", response_model=UserListResponse, name="search_users", tags=["User Management Requires (Admin or Manager Roles)"])
 async def search_users(
     request: Request,
     nickname: Optional[str] = None, 
