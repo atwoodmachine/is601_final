@@ -181,14 +181,32 @@ async def test_get_by_search_role(db_session, users_with_same_role_50_users):
     assert users_page_1[0].id != users_page_2[0].id
     assert users_page_1[0].role == UserRole.AUTHENTICATED
 
+async def test_get_by_search_is_professional(db_session, user):
+    retrieved_users = await UserService.get_by_search(db_session, is_professional=False)
+    assert len(retrieved_users) == 1
+    assert retrieved_users[0].is_professional == False
+
+async def test_get_by_search_date_range(db_session, user):
+    retrieved_users = await UserService.get_by_search(db_session, created_before=user.created_at, created_after=user.created_at)
+    assert len(retrieved_users) == 1
+    assert retrieved_users[0].created_at == user.created_at
+
 async def test_get_by_search_not_exists(db_session):
     retrieved_users = await UserService.get_by_search(db_session, nickname="nick", email="nothere@nowhere.com", role=UserRole.AUTHENTICATED)
     assert len(retrieved_users) == 0
 
 #search combinations
 async def test_get_by_search_all(db_session, user):
-    retrieved_users = await UserService.get_by_search(db_session, nickname=user.nickname, email=user.email, role=UserRole.AUTHENTICATED)
+    retrieved_users = await UserService.get_by_search(
+        db_session, 
+        nickname=user.nickname, 
+        email=user.email, 
+        role=UserRole.AUTHENTICATED,
+        is_professional=user.is_professional,
+        created_after=user.created_at,
+        created_before=user.created_at)
     assert len(retrieved_users) == 1
+    assert retrieved_users[0].id == user.id
     assert retrieved_users[0].nickname == user.nickname
     assert retrieved_users[0].email == user.email
     assert retrieved_users[0].role == UserRole.AUTHENTICATED
@@ -209,4 +227,10 @@ async def test_get_by_search_nickname_role(db_session, user):
     retrieved_users = await UserService.get_by_search(db_session, nickname=user.nickname, role=UserRole.AUTHENTICATED)
     assert len(retrieved_users) == 1
     assert retrieved_users[0].nickname == user.nickname
+    assert retrieved_users[0].role == UserRole.AUTHENTICATED
+
+async def test_get_by_search_role_date_range(db_session, user):
+    retrieved_users = await UserService.get_by_search(db_session, role=UserRole.AUTHENTICATED, created_before=user.created_at, created_after=user.created_at)
+    assert len(retrieved_users) == 1
+    assert retrieved_users[0].created_at == user.created_at
     assert retrieved_users[0].role == UserRole.AUTHENTICATED
