@@ -43,6 +43,26 @@ async def test_update_user_email_access_denied(async_client, verified_user, user
     response = await async_client.put(f"/users/{verified_user.id}", json=updated_data, headers=headers)
     assert response.status_code == 403
 
+"""
+@pytest.mark.asyncio
+async def test_create_user_duplicate_email(async_client, verified_user):
+    user_data = {
+        "email": verified_user.email,
+        "password": "AnotherPassword123!",
+        "role": UserRole.ADMIN.name
+    }
+    response = await async_client.post("/register/", json=user_data)
+    assert response.status_code == 400
+    assert "Email already exists" in response.json().get("detail", "")
+"""
+@pytest.mark.asyncio
+async def test_update_user_duplicate_email(async_client, verified_user, admin_user, admin_token):
+    updated_data = {"email": f"{verified_user.email}"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 400
+    assert "Email already exists" in response.json().get("detail", "")
+
 @pytest.mark.asyncio
 async def test_update_user_email_access_allowed(async_client, admin_user, admin_token):
     updated_data = {"email": f"updated_{admin_user.id}@example.com"}
