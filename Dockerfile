@@ -27,7 +27,7 @@ RUN python -m venv /.venv \
     && pip install -r requirements.txt
 
 # Define a second stage for the runtime, using the same Debian Bookworm slim image
-FROM python:3.14.0a7-slim-bookworm as final
+FROM python:3.12-slim-bookworm as final
 
 #Upgrade for perl vulnerability
 RUN apt-get update && apt-get upgrade -y
