@@ -51,6 +51,13 @@ async def test_update_user_duplicate_email(async_client, verified_user, admin_us
     assert response.status_code == 400
     assert "Email already exists" in response.json().get("detail", "")
 
+async def test_update_user_duplicate_nickname(async_client, verified_user, admin_user, admin_token):
+    updated_data = {"nickname": f"{verified_user.nickname}"}
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.put(f"/users/{admin_user.id}", json=updated_data, headers=headers)
+    assert response.status_code == 400
+    assert "Nickname already exists" in response.json().get("detail", "")
+
 @pytest.mark.asyncio
 async def test_update_user_email_access_allowed(async_client, admin_user, admin_token):
     updated_data = {"email": f"updated_{admin_user.id}@example.com"}
