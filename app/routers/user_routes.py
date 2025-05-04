@@ -227,10 +227,23 @@ async def list_users(
     )
 
 @router.post("/register/", response_model=UserResponse, tags=["Login and Registration"])
-async def register(user_data: UserCreate, session: AsyncSession = Depends(get_db), email_service: EmailService = Depends(get_email_service)):
+async def register(user_data: UserCreate, request: Request, session: AsyncSession = Depends(get_db), email_service: EmailService = Depends(get_email_service)):
     user = await UserService.register_user(session, user_data.model_dump(), email_service)
     if user:
-        return user
+        return UserResponse.model_construct(
+        id=user.id,
+        bio=user.bio,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        profile_picture_url=user.profile_picture_url,
+        nickname=user.nickname,
+        email=user.email,
+        role=user.role,
+        last_login_at=user.last_login_at,
+        created_at=user.created_at,
+        updated_at=user.updated_at,
+        links=create_user_links(user.id, request)
+    )
     raise HTTPException(status_code=400, detail="Email already exists")
 
 @router.post("/login/", response_model=TokenResponse, tags=["Login and Registration"])
