@@ -122,6 +122,9 @@ async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, 
     existing_email = await UserService.get_by_email(db, user_update.email)
     if existing_email:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists")
+    existing_nickname = await UserService.get_by_nickname(db, user_update.nickname)
+    if existing_nickname:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nickname already exists")
 
     user_data = user_update.model_dump(exclude_unset=True)
     updated_user = await UserService.update(db, user_id, user_data)
